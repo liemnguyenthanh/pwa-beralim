@@ -6,7 +6,7 @@ interface NotificationState {
   token: string | null;
   isSupported: boolean;
   serviceWorkerRegistered: boolean;
-  lastMessage: any;
+  lastMessage: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export default function Home() {
@@ -101,36 +101,6 @@ export default function Home() {
     setLogs([]);
   };
 
-  const sendTestNotification = async () => {
-    if (!notificationState.token) {
-      addLog('No FCM token available');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: notificationState.token,
-          title: 'Test từ Debug Page',
-          body: 'Notification được gửi từ debug page!'
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        addLog(`Notification sent successfully: ${result.messageId}`);
-      } else {
-        addLog(`Failed to send notification: ${result.error}`);
-      }
-    } catch (error) {
-      addLog(`Error sending notification: ${error}`);
-    }
-  };
 
   return (
     <div className={`min-h-screen p-4 transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -204,13 +174,6 @@ export default function Home() {
               Test Local Notification
             </button>
             
-            <button
-              onClick={sendTestNotification}
-              disabled={!notificationState.token}
-              className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Send Test via API
-            </button>
             
             {notificationState.token && (
               <button
@@ -280,10 +243,9 @@ export default function Home() {
         }`}>
           <h2 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Hướng dẫn sử dụng</h2>
           <ol className={`list-decimal list-inside space-y-2 transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            <li>Click "Request Permission & Get Token" để xin quyền và lấy FCM token</li>
-            <li>Click "Test Local Notification" để test notification local</li>
-            <li>Click "Send Test via API" để gửi notification qua API (cần setup server key)</li>
-            <li>Copy FCM token để gửi notification từ Firebase Console hoặc server</li>
+            <li>Click &quot;Request Permission & Get Token&quot; để xin quyền và lấy FCM token</li>
+            <li>Click &quot;Test Local Notification&quot; để test notification local</li>
+            <li>Copy FCM token để gửi notification từ Firebase Console</li>
             <li>Kiểm tra logs để debug các vấn đề</li>
             <li>Để gửi notification từ Firebase Console: Project Settings → Cloud Messaging → Send test message</li>
           </ol>

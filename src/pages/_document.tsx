@@ -32,8 +32,8 @@ export default function Document() {
         <link rel="shortcut icon" href="/favicon.ico" />
 
         {/* Firebase SDK */}
-        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js" async></script>
       </Head>
       <body className="antialiased">
         <Main />
