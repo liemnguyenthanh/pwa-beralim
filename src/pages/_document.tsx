@@ -39,18 +39,19 @@ export default function Document() {
         <Main />
         <NextScript />
         
-        {/* Service Worker Registration Script */}
+        {/* Firebase Messaging Service Worker Registration */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
+                  // Register Firebase messaging service worker
                   navigator.serviceWorker.register('/firebase-messaging-sw.js')
                     .then(function(registration) {
-                      console.log('SW registered: ', registration);
+                      console.log('Firebase messaging SW registered: ', registration);
                     })
                     .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
+                      console.log('Firebase messaging SW registration failed: ', registrationError);
                     });
                 });
               }

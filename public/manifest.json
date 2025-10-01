@@ -1,6 +1,13 @@
 {
-    "theme_color": "#8936FF",
-    "background_color": "#ff0000",
+    "name": "PWA Notification Demo",
+    "short_name": "PWA Demo",
+    "description": "Demo PWA với Firebase Push Notifications",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "orientation": "portrait-primary",
+    "scope": "/",
     "icons": [
         {
             "purpose": "maskable",
@@ -15,11 +22,11 @@
             "type": "image/png"
         }
     ],
-    "orientation": "any",
-    "display": "standalone",
-    "start_url": "/",
-    "description": "Demo PWA với Firebase Push Notifications",
-    "dir": "auto",
-    "lang": "en",
-    "name": "Beralim"
+    "categories": [
+        "productivity",
+        "utilities"
+    ],
+    "lang": "vi",
+    "dir": "ltr",
+    "prefer_related_applications": false
 }

@@ -5,7 +5,8 @@ interface NotificationState {
   permission: NotificationPermission | null;
   token: string | null;
   isSupported: boolean;
-  serviceWorkerRegistered: boolean;
+  nextPwaSwRegistered: boolean;
+  firebaseSwRegistered: boolean;
   lastMessage: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
@@ -14,7 +15,8 @@ export default function Home() {
     permission: null,
     token: null,
     isSupported: false,
-    serviceWorkerRegistered: false,
+    nextPwaSwRegistered: false,
+    firebaseSwRegistered: false,
     lastMessage: null,
   });
 
@@ -37,13 +39,22 @@ export default function Home() {
       addLog(`Notification permission: ${Notification.permission}`);
     }
 
-    // Check service worker registration
+    // Check service worker registrations
     if ('serviceWorker' in navigator) {
+      // Check next-pwa service worker
+      navigator.serviceWorker.getRegistration('/sw.js')
+        .then(registration => {
+          const isRegistered = !!registration;
+          setNotificationState(prev => ({ ...prev, nextPwaSwRegistered: isRegistered }));
+          addLog(`Next-PWA Service Worker registered: ${isRegistered}`);
+        });
+
+      // Check Firebase messaging service worker
       navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js')
         .then(registration => {
           const isRegistered = !!registration;
-          setNotificationState(prev => ({ ...prev, serviceWorkerRegistered: isRegistered }));
-          addLog(`Service Worker registered: ${isRegistered}`);
+          setNotificationState(prev => ({ ...prev, firebaseSwRegistered: isRegistered }));
+          addLog(`Firebase messaging SW registered: ${isRegistered}`);
         });
     }
 
@@ -122,7 +133,7 @@ export default function Home() {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className={`p-4 rounded-lg shadow transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <h3 className={`font-semibold transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Notification Support</h3>
             <p className={`text-lg font-bold ${notificationState.isSupported ? 'text-green-500' : 'text-red-500'}`}>
@@ -141,9 +152,16 @@ export default function Home() {
           </div>
 
           <div className={`p-4 rounded-lg shadow transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <h3 className={`font-semibold transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Service Worker</h3>
-            <p className={`text-lg font-bold ${notificationState.serviceWorkerRegistered ? 'text-green-500' : 'text-red-500'}`}>
-              {notificationState.serviceWorkerRegistered ? '✅ Registered' : '❌ Not Registered'}
+            <h3 className={`font-semibold transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Next-PWA SW</h3>
+            <p className={`text-lg font-bold ${notificationState.nextPwaSwRegistered ? 'text-green-500' : 'text-red-500'}`}>
+              {notificationState.nextPwaSwRegistered ? '✅ Registered' : '❌ Not Registered'}
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-lg shadow transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <h3 className={`font-semibold transition-colors duration-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Firebase SW</h3>
+            <p className={`text-lg font-bold ${notificationState.firebaseSwRegistered ? 'text-green-500' : 'text-red-500'}`}>
+              {notificationState.firebaseSwRegistered ? '✅ Registered' : '❌ Not Registered'}
             </p>
           </div>
 

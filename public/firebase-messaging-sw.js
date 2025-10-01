@@ -1,4 +1,5 @@
-// Import Firebase scripts
+// Firebase Messaging Service Worker
+// This service worker is separate from the next-pwa workbox service worker
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
@@ -21,14 +22,14 @@ const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('Received background message ', payload);
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
   const notificationTitle = payload.notification?.title || 'Thông báo mới';
   const notificationOptions = {
     body: payload.notification?.body || 'Bạn có thông báo mới',
     icon: '/favicon.ico',
     badge: '/favicon.ico',
-    tag: 'notification-tag',
+    tag: 'firebase-notification',
     requireInteraction: true,
     actions: [
       {
@@ -39,7 +40,8 @@ messaging.onBackgroundMessage((payload) => {
         action: 'close',
         title: 'Đóng'
       }
-    ]
+    ],
+    data: payload.data || {}
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -47,7 +49,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
+  console.log('[firebase-messaging-sw.js] Notification clicked:', event);
   
   event.notification.close();
   
@@ -69,5 +71,5 @@ self.addEventListener('notificationclick', (event) => {
 
 // Handle notification close
 self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event);
+  console.log('[firebase-messaging-sw.js] Notification closed:', event);
 });
