@@ -1,19 +1,18 @@
 import type { NextConfig } from "next";
-import withPWA from '@ducanh2912/next-pwa';
+import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
-  output: 'export',
+  output: "export",
   trailingSlash: true,
   images: {
-    unoptimized: true
-  }
+    unoptimized: true,
+  },
 };
 
 const withPWAConfig = withPWA({
-  dest: 'public',
-  disable: true, // Tắt hoàn toàn Next-PWA service worker để tránh conflict
+  dest: "public",
 });
 
 export default withPWAConfig(nextConfig);
