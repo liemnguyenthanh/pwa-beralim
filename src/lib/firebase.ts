@@ -59,7 +59,9 @@ export const onMessageListener = () => {
   return new Promise((resolve) => {
     onMessage(messaging, (payload) => {
       console.log('Message received in foreground:', payload);
-      resolve(payload);
+      // Không resolve payload để tránh duplicate notification
+      // Chỉ log để debug
+      resolve({});
     });
   });
 };

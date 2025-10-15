@@ -91,10 +91,11 @@ messaging.onBackgroundMessage((payload) => {
     const hasSimilarNotification = notifications.some(notif => 
       notif.title === title && 
       notif.body === body &&
-      (Date.now() - notif.data?.timestamp) < 5000 // Trong vòng 5 giây
+      (Date.now() - (notif.data?.timestamp || 0)) < 3000 // Trong vòng 3 giây
     );
     
     if (!hasSimilarNotification) {
+      console.log('[firebase-messaging-sw.js] Showing notification:', title);
       self.registration.showNotification(title, options);
     } else {
       console.log('[firebase-messaging-sw.js] Duplicate notification detected, skipping');
