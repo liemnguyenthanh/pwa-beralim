@@ -13,14 +13,7 @@ const nextConfig: NextConfig = {
 
 const withPWAConfig = withPWA({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  workboxOptions: {
-    // Tắt notification handling trong Next-PWA
-    skipWaiting: true,
-    clientsClaim: true,
-    // Không xử lý notification events
-    runtimeCaching: []
-  }
+  disable: true, // Tắt hoàn toàn Next-PWA service worker để tránh conflict
 });
 
 export default withPWAConfig(nextConfig);

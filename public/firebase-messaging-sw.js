@@ -24,12 +24,13 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
+  // Tránh duplicate notification bằng cách sử dụng unique tag
   const notificationTitle = payload.notification?.title || 'Thông báo mới';
   const notificationOptions = {
     body: payload.notification?.body || 'Bạn có thông báo mới',
     icon: '/favicon.ico',
     badge: '/favicon.ico',
-    tag: 'firebase-notification',
+    tag: `firebase-notification-${Date.now()}`, // Unique tag để tránh duplicate
     requireInteraction: true,
     actions: [
       {
@@ -44,7 +45,18 @@ messaging.onBackgroundMessage((payload) => {
     data: payload.data || {}
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // Kiểm tra xem có notification nào đang hiển thị không
+  self.registration.getNotifications().then(notifications => {
+    // Chỉ hiển thị notification mới nếu chưa có notification tương tự
+    const hasSimilarNotification = notifications.some(notification => 
+      notification.title === notificationTitle && 
+      notification.body === notificationOptions.body
+    );
+    
+    if (!hasSimilarNotification) {
+      self.registration.showNotification(notificationTitle, notificationOptions);
+    }
+  });
 });
 
 // Handle notification click
