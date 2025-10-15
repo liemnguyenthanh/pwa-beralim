@@ -24,7 +24,9 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
+  // Ưu tiên xử lý data payload để tránh duplicate
   const data = payload.data || {};
+  const notification = payload.notification || {};
 
   // Check if app is in foreground
   if (data.appState === 'foreground' || data.visible === 'true') {
@@ -51,13 +53,14 @@ messaging.onBackgroundMessage((payload) => {
     return;
   }
 
+  // Ưu tiên data payload, fallback to notification payload
   const url = data.url || (payload.fcmOptions && payload.fcmOptions.link) || '/';
-  const title = data.title || (payload.notification && payload.notification.title) || 'Berally';
-  const body = data.body || (payload.notification && payload.notification.body) || 'New notification';
-  const icon = data.icon || (payload.notification && payload.notification.icon) || '/favicon.ico';
+  const title = data.title || notification.title || 'Berally';
+  const body = data.body || notification.body || 'New notification';
+  const icon = data.icon || notification.icon || '/favicon.ico';
 
-  // Use context-specific tag
-  const notificationTag = data.tag || `berally-${isPWA ? 'pwa' : 'web'}`;
+  // Use context-specific tag để tránh duplicate
+  const notificationTag = data.tag || `berally-${isPWA ? 'pwa' : 'web'}-${Date.now()}`;
 
   const options = {
     body,
@@ -83,7 +86,20 @@ messaging.onBackgroundMessage((payload) => {
     },
   };
 
-  self.registration.showNotification(title, options);
+  // Kiểm tra duplicate notification trước khi hiển thị
+  self.registration.getNotifications().then(notifications => {
+    const hasSimilarNotification = notifications.some(notif => 
+      notif.title === title && 
+      notif.body === body &&
+      (Date.now() - notif.data?.timestamp) < 5000 // Trong vòng 5 giây
+    );
+    
+    if (!hasSimilarNotification) {
+      self.registration.showNotification(title, options);
+    } else {
+      console.log('[firebase-messaging-sw.js] Duplicate notification detected, skipping');
+    }
+  });
 });
 
 // Handle notification click

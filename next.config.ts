@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
 
 const withPWAConfig = withPWA({
   dest: "public",
+  disable: true, // Tắt Next-PWA service worker để test
 });
 
 export default withPWAConfig(nextConfig);
