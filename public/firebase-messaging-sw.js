@@ -23,40 +23,67 @@ const messaging = firebase.messaging();
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  // Tránh duplicate notification bằng cách sử dụng unique tag
-  const notificationTitle = payload.notification?.title || 'Thông báo mới';
-  const notificationOptions = {
-    body: payload.notification?.body || 'Bạn có thông báo mới',
-    icon: '/favicon.ico',
+
+  const data = payload.data || {};
+
+  // Check if app is in foreground
+  if (data.appState === 'foreground' || data.visible === 'true') {
+    console.log('[firebase-messaging-sw.js] App is in foreground, skipping notification display');
+    return;
+  }
+
+  // Check if this is PWA context
+  const isPWA = self.registration.scope.includes('standalone') || 
+                self.registration.scope.includes('pwa') ||
+                data.context === 'pwa';
+
+  // Check if this is web context  
+  const isWeb = !isPWA || data.context === 'web';
+
+  // Only show notification in PWA context (or web context, but not both)
+  if (isWeb && data.preferPWA === 'true') {
+    console.log('[firebase-messaging-sw.js] Prefer PWA, skipping web notification');
+    return;
+  }
+
+  if (isPWA && data.preferWeb === 'true') {
+    console.log('[firebase-messaging-sw.js] Prefer Web, skipping PWA notification');
+    return;
+  }
+
+  const url = data.url || (payload.fcmOptions && payload.fcmOptions.link) || '/';
+  const title = data.title || (payload.notification && payload.notification.title) || 'Berally';
+  const body = data.body || (payload.notification && payload.notification.body) || 'New notification';
+  const icon = data.icon || (payload.notification && payload.notification.icon) || '/favicon.ico';
+
+  // Use context-specific tag
+  const notificationTag = data.tag || `berally-${isPWA ? 'pwa' : 'web'}`;
+
+  const options = {
+    body,
+    icon,
     badge: '/favicon.ico',
-    tag: `firebase-notification-${Date.now()}`, // Unique tag để tránh duplicate
+    tag: notificationTag,
     requireInteraction: true,
     actions: [
       {
         action: 'open',
-        title: 'Mở ứng dụng'
+        title: 'Open notification',
       },
       {
         action: 'close',
-        title: 'Đóng'
-      }
+        title: 'Close notification',
+      },
     ],
-    data: payload.data || {}
+    data: {
+      url,
+      payloadData: data,
+      timestamp: Date.now(),
+      context: isPWA ? 'pwa' : 'web',
+    },
   };
 
-  // Kiểm tra xem có notification nào đang hiển thị không
-  self.registration.getNotifications().then(notifications => {
-    // Chỉ hiển thị notification mới nếu chưa có notification tương tự
-    const hasSimilarNotification = notifications.some(notification => 
-      notification.title === notificationTitle && 
-      notification.body === notificationOptions.body
-    );
-    
-    if (!hasSimilarNotification) {
-      self.registration.showNotification(notificationTitle, notificationOptions);
-    }
-  });
+  self.registration.showNotification(title, options);
 });
 
 // Handle notification click
