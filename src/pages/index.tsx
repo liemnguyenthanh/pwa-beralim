@@ -87,6 +87,18 @@ export default function Home() {
 
     // Check service worker registrations
     if ('serviceWorker' in navigator) {
+      // Check all service workers
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        addLog(`Total service workers: ${registrations.length}`);
+        
+        registrations.forEach((registration, index) => {
+          addLog(`SW ${index + 1}: ${registration.scope} - Active: ${!!registration.active}`);
+          if (registration.active) {
+            addLog(`  Script URL: ${registration.active.scriptURL}`);
+          }
+        });
+      });
+
       // Check next-pwa service worker
       navigator.serviceWorker.getRegistration('/sw.js')
         .then(registration => {
@@ -135,13 +147,35 @@ export default function Home() {
   };
 
   const testLocalNotification = () => {
+    addLog('Testing local notification...');
+    addLog(`Notification permission: ${Notification.permission}`);
+    
     if (Notification.permission === 'granted') {
-      new Notification('Test Notification', {
-        body: 'Đây là thông báo test từ PWA',
-        icon: '/favicon.ico',
-        tag: 'test-notification'
-      });
-      addLog('Local notification sent');
+      try {
+        const notification = new Notification('Test Notification', {
+          body: 'Đây là thông báo test từ PWA',
+          icon: '/favicon.ico',
+          tag: 'test-notification'
+        });
+        
+        addLog('Local notification created successfully');
+        
+        // Add event listeners to debug
+        notification.onclick = () => {
+          addLog('Local notification clicked');
+        };
+        
+        notification.onshow = () => {
+          addLog('Local notification shown');
+        };
+        
+        notification.onerror = (error) => {
+          addLog(`Local notification error: ${error}`);
+        };
+        
+      } catch (error) {
+        addLog(`Error creating local notification: ${error}`);
+      }
     } else {
       addLog('Notification permission not granted');
     }
