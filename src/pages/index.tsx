@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { requestPermission, onMessageListener } from "../lib/firebase";
 
 interface NotificationState {
@@ -28,29 +28,37 @@ export default function Home() {
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   };
 
-  const clearOldServiceWorkers = async () => {
+  const clearOldServiceWorkers = useCallback(async () => {
     try {
       // Get all service worker registrations
       const registrations = await navigator.serviceWorker.getRegistrations();
       
       for (const registration of registrations) {
-        // Unregister old Next-PWA service workers
-        if (registration.scope.includes('/sw.js') || 
-            registration.scope.includes('workbox') ||
-            registration.active?.scriptURL?.includes('sw.js')) {
+        // Chỉ unregister old Next-PWA service workers, KHÔNG unregister Firebase
+        const scriptURL = registration.active?.scriptURL || '';
+        const scope = registration.scope;
+        
+        // Chỉ unregister nếu là Next-PWA service worker
+        if (scriptURL.includes('/sw.js') || 
+            scriptURL.includes('workbox') ||
+            scope.includes('/sw.js') ||
+            (scope.includes('workbox') && !scope.includes('firebase'))) {
           await registration.unregister();
-          addLog(`Unregistered old service worker: ${registration.scope}`);
+          addLog(`Unregistered old Next-PWA service worker: ${scope}`);
+        } else {
+          addLog(`Keeping service worker: ${scope}`);
         }
       }
 
-      // Clear old caches
+      // Clear old caches (chỉ workbox, không clear Firebase caches)
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         for (const cacheName of cacheNames) {
-          // Clear old workbox caches
-          if (cacheName.includes('workbox') || 
-              cacheName.includes('next-pwa') ||
-              cacheName.includes('sw-')) {
+          // Chỉ clear old workbox caches, không clear Firebase caches
+          if ((cacheName.includes('workbox') || 
+               cacheName.includes('next-pwa') ||
+               cacheName.includes('sw-')) &&
+              !cacheName.includes('firebase')) {
             await caches.delete(cacheName);
             addLog(`Cleared old cache: ${cacheName}`);
           }
@@ -59,7 +67,7 @@ export default function Home() {
     } catch (error) {
       addLog(`Error clearing old service workers: ${error}`);
     }
-  };
+  }, [addLog]);
 
   useEffect(() => {
     // Check if notifications are supported
@@ -152,21 +160,37 @@ export default function Home() {
 
   const forceClearCache = async () => {
     try {
-      addLog('Force clearing all cache and service workers...');
+      addLog('Force clearing cache and old service workers...');
       
-      // Clear all service workers
+      // Clear old service workers (không clear Firebase)
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
-        await registration.unregister();
-        addLog(`Unregistered: ${registration.scope}`);
+        const scriptURL = registration.active?.scriptURL || '';
+        const scope = registration.scope;
+        
+        // Chỉ unregister old service workers, giữ Firebase
+        if (scriptURL.includes('/sw.js') || 
+            scriptURL.includes('workbox') ||
+            scope.includes('/sw.js') ||
+            (scope.includes('workbox') && !scope.includes('firebase'))) {
+          await registration.unregister();
+          addLog(`Unregistered old service worker: ${scope}`);
+        } else {
+          addLog(`Keeping Firebase service worker: ${scope}`);
+        }
       }
       
-      // Clear all caches
+      // Clear old caches (không clear Firebase caches)
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         for (const cacheName of cacheNames) {
-          await caches.delete(cacheName);
-          addLog(`Cleared cache: ${cacheName}`);
+          if ((cacheName.includes('workbox') || 
+               cacheName.includes('next-pwa') ||
+               cacheName.includes('sw-')) &&
+              !cacheName.includes('firebase')) {
+            await caches.delete(cacheName);
+            addLog(`Cleared old cache: ${cacheName}`);
+          }
         }
       }
       
@@ -175,7 +199,7 @@ export default function Home() {
       sessionStorage.clear();
       addLog('Cleared localStorage and sessionStorage');
       
-      addLog('Cache cleared! Please refresh the page.');
+      addLog('Cache cleared! Firebase service worker preserved.');
       
       // Auto refresh after 2 seconds
       setTimeout(() => {
