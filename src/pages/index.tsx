@@ -28,6 +28,39 @@ export default function Home() {
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   };
 
+  const clearOldServiceWorkers = async () => {
+    try {
+      // Get all service worker registrations
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      
+      for (const registration of registrations) {
+        // Unregister old Next-PWA service workers
+        if (registration.scope.includes('/sw.js') || 
+            registration.scope.includes('workbox') ||
+            registration.active?.scriptURL?.includes('sw.js')) {
+          await registration.unregister();
+          addLog(`Unregistered old service worker: ${registration.scope}`);
+        }
+      }
+
+      // Clear old caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          // Clear old workbox caches
+          if (cacheName.includes('workbox') || 
+              cacheName.includes('next-pwa') ||
+              cacheName.includes('sw-')) {
+            await caches.delete(cacheName);
+            addLog(`Cleared old cache: ${cacheName}`);
+          }
+        }
+      }
+    } catch (error) {
+      addLog(`Error clearing old service workers: ${error}`);
+    }
+  };
+
   useEffect(() => {
     // Check if notifications are supported
     const isSupported = 'Notification' in window && 'serviceWorker' in navigator;
@@ -37,6 +70,11 @@ export default function Home() {
     if (isSupported) {
       setNotificationState(prev => ({ ...prev, permission: Notification.permission }));
       addLog(`Notification permission: ${Notification.permission}`);
+    }
+
+    // Auto clear old service workers and cache
+    if ('serviceWorker' in navigator) {
+      clearOldServiceWorkers();
     }
 
     // Check service worker registrations
@@ -67,7 +105,7 @@ export default function Home() {
     });
 
     addLog('PWA Notification Debug Page initialized');
-  }, []);
+  }, [clearOldServiceWorkers]);
 
   const requestNotificationPermission = async () => {
     try {
@@ -110,6 +148,43 @@ export default function Home() {
 
   const clearLogs = () => {
     setLogs([]);
+  };
+
+  const forceClearCache = async () => {
+    try {
+      addLog('Force clearing all cache and service workers...');
+      
+      // Clear all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        addLog(`Unregistered: ${registration.scope}`);
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+          addLog(`Cleared cache: ${cacheName}`);
+        }
+      }
+      
+      // Clear localStorage and sessionStorage
+      localStorage.clear();
+      sessionStorage.clear();
+      addLog('Cleared localStorage and sessionStorage');
+      
+      addLog('Cache cleared! Please refresh the page.');
+      
+      // Auto refresh after 2 seconds
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
+    } catch (error) {
+      addLog(`Error clearing cache: ${error}`);
+    }
   };
 
 
@@ -207,6 +282,13 @@ export default function Home() {
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
             >
               Clear Logs
+            </button>
+            
+            <button
+              onClick={forceClearCache}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              🧹 Force Clear Cache
             </button>
           </div>
         </div>

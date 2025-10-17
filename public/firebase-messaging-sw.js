@@ -24,6 +24,27 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
+  // Tạo unique message ID để tránh duplicate
+  const messageId = payload.messageId || payload.data?.messageId || Date.now().toString();
+  const messageKey = `message_${messageId}`;
+  
+  // Kiểm tra xem message này đã được xử lý chưa
+  if (self.messageProcessed && self.messageProcessed[messageKey]) {
+    console.log('[firebase-messaging-sw.js] Message already processed, skipping:', messageId);
+    return;
+  }
+  
+  // Đánh dấu message đã được xử lý
+  if (!self.messageProcessed) self.messageProcessed = {};
+  self.messageProcessed[messageKey] = true;
+  
+  // Cleanup old processed messages (giữ tối đa 100 messages)
+  const processedKeys = Object.keys(self.messageProcessed);
+  if (processedKeys.length > 100) {
+    const oldestKeys = processedKeys.slice(0, processedKeys.length - 100);
+    oldestKeys.forEach(key => delete self.messageProcessed[key]);
+  }
+
   // Ưu tiên xử lý data payload để tránh duplicate
   const data = payload.data || {};
   const notification = payload.notification || {};
@@ -91,7 +112,7 @@ messaging.onBackgroundMessage((payload) => {
     const hasSimilarNotification = notifications.some(notif => 
       notif.title === title && 
       notif.body === body &&
-      (Date.now() - (notif.data?.timestamp || 0)) < 3000 // Trong vòng 3 giây
+      (Date.now() - (notif.data?.timestamp || 0)) < 5000 // Trong vòng 5 giây
     );
     
     if (!hasSimilarNotification) {
