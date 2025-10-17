@@ -32,7 +32,9 @@ export default function Document() {
         <link rel="shortcut icon" href="/favicon.ico" />
 
         {/* Firebase SDK */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" async></script>
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js" async></script>
       </Head>
       <body className="antialiased">
